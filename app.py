@@ -1,46 +1,3 @@
-# import streamlit as st
-# from openai import OpenAI
-
-# st.set_page_config(page_title="AI Python Tutor", page_icon="📘") # Page title
-# st.title("AI Python Tutor")
-# # Description
-# st.write("A simple tutor for beginner Python topics like variables, loops, functions, and lists.")
-
-# # Client with API Key
-# client = OpenAI(api_key=st.secrets.get("OPENAI_API_KEY", ""))
-
-# if "messages" not in st.session_state:
-#     st.session_state.messages = [
-#         {"role": "system", "content": "You are a helpful Python tutor for beginners. Answer clearly and include examples when useful."}
-#     ]
-
-# for message in st.session_state.messages[1:]:
-#     with st.chat_message(message["role"]):
-#         st.markdown(message["content"])
-
-# user_input = st.chat_input("Ask a Python question...")
-
-# if user_input:
-#     st.session_state.messages.append({"role": "user", "content": user_input})
-
-#     with st.chat_message("user"):
-#         st.markdown(user_input)
-
-#     with st.chat_message("assistant"):
-#         response_placeholder = st.empty()
-#         response_placeholder.markdown("Thinking...")
-
-#         response = client.chat.completions.create(
-#             model="gpt-4o-mini",
-#             messages=st.session_state.messages
-#         )
-
-#         answer = response.choices[0].message.content
-#         response_placeholder.markdown(answer)
-
-#     st.session_state.messages.append({"role": "assistant", "content": answer})
-
-
 # Importing Libraries and Setting up the App UI
     # Imports Streamlit
         # Streamlit - framework to turn data scripts into web apps quickly
@@ -84,6 +41,24 @@ user_input = st.chat_input("Ask a Python question...")
 
     # When the user submits a question
 if user_input:
+    # Intent Detection Logic
+       # We convert the input to lowercase so it catches words even if the user capitalizes them
+    input_lower = user_input.lower()
+    
+    if 'def' in input_lower or 'error' in input_lower: 
+        mode = 'debug'
+    elif 'exercise' in input_lower or 'practice' in input_lower: 
+        mode = 'exercise'
+    elif 'explain' in input_lower: 
+        mode = 'explain'
+    elif 'example' in input_lower or 'code' in input_lower:
+        mode = 'example'
+    else: 
+        mode = 'feedback'
+        
+    # Display the active mode in the app UI so you can test that it works
+    st.info(f"💡 Active Tutoring Module: {mode.title()}")
+
     # It saves the question into the session memory as the user role
     st.session_state.messages.append({"role": "user", "content": user_input})
 
@@ -92,11 +67,26 @@ if user_input:
         st.markdown(user_input)
 
     # Generating and Displays the AI's Response
-
-
     with st.chat_message("assistant"):
         placeholder = st.empty()
         placeholder.markdown("Thinking...")
+
+        # Create a hidden instruction based on the project requirements
+          # STRUCTURED RESPONSE DESIGN LOGIC ---
+        structured_instructions = f"""
+        Act as a Python tutor focusing on the '{mode}' module. 
+        You MUST structure your response using EXACTLY these four Markdown headings and no others:
+        ### Concept Explanation
+        ### Code Example
+        ### Practice Exercise
+        ### Feedback (if code provided)
+        """
+
+        # Create a temporary copy of the chat history to send to the API
+        # This attaches the hidden instructions to the user's latest message so the AI sees it,
+        # but it keeps the screen clean because it's not saved to st.session_state.messages
+        api_messages = st.session_state.messages.copy()
+        api_messages[-1] = {"role": "user", "content": user_input + "\n\n" + structured_instructions}
 
         # Sends the entire saved conversation history - st.session_state.messages
         # to the gpt-4o-mini model
@@ -111,6 +101,8 @@ if user_input:
 
 # Displays the text on the screen and appends it to the messages list under the assistant role so the AI remembers for the next question
     st.session_state.messages.append({"role": "assistant", "content": answer})
+
+# Uses Llama but because of time restraints used OpenAI instead :)
 
 # # Importing Libraries and Setting up the App UI
 #     # Imports Streamlit - framework to turn data scripts into web apps quickly
